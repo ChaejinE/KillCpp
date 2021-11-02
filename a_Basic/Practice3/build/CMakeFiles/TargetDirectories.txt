@@ -1,0 +1,3 @@
+/home/cjlotto/git_clone/KillCpp/a_Basic/Practice3/build/CMakeFiles/rebuild_cache.dir
+/home/cjlotto/git_clone/KillCpp/a_Basic/Practice3/build/CMakeFiles/program.dir
+/home/cjlotto/git_clone/KillCpp/a_Basic/Practice3/build/CMakeFiles/edit_cache.dir

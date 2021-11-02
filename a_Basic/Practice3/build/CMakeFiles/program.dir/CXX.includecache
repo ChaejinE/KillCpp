@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../includes/header1.h
+iostream
+-
+
+/home/cjlotto/git_clone/KillCpp/a_Basic/Practice3/header_test.cpp
+iostream
+-
+header1.h
+/home/cjlotto/git_clone/KillCpp/a_Basic/Practice3/header1.h
+
