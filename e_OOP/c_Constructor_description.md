@@ -146,3 +146,196 @@ int main()
 오늘은 8 년 0 월 4199705 일 입니다 
 ```
 - Constructor Overloading에 대해 여러 테스트를 해본 코드다.
+
+# Destructor
+```cpp
+#include <iostream>
+#include <string.h>
+
+class Marine
+{
+    int hp;
+    int coord_x, coord_y;
+    int damage;
+    bool is_dead;
+    char *name; // 마린 이름
+
+public:
+    Marine();                                      // 기본생성자
+    Marine(int x, int y);                          // x, y 좌표에 마린 생성하는 생성자
+    Marine(int x, int y, const char *marine_name); // 이름까지 지정하는 생성자
+
+    int attack();                      // 데미지 return
+    void be_attacked(int damage_earn); // 입은 데미지
+    void move(int x, int y);
+    void show_status();
+};
+
+Marine::Marine(int x, int y)
+{
+    coord_x = x;
+    coord_y = y;
+    hp = 50;
+    damage = 5;
+    is_dead = false;
+
+    name = NULL;
+}
+
+Marine::Marine(int x, int y, const char *marine_name)
+{
+    name = new char[strlen(marine_name) + 1];
+    strcpy(name, marine_name);
+
+    coord_x = x;
+    coord_y = y;
+    hp = 50;
+    damage = 5;
+    is_dead = false;
+}
+
+void Marine::move(int x, int y)
+{
+    coord_x = x;
+    coord_y = y;
+}
+
+int Marine::attack() { return damage; }
+void Marine::be_attacked(int damage_earn)
+{
+    hp -= damage_earn;
+    if (hp < 0)
+        is_dead = true;
+}
+
+void Marine::show_status()
+{
+    std::cout << " Marine " << name << std::endl;
+    std::cout << "Location : ( " << coord_x << " , " << coord_y << " )"
+              << std::endl;
+
+    std::cout << " HP : " << hp << std::endl;
+}
+
+int main()
+{
+    Marine *marines[100];
+
+    marines[0] = new Marine(2, 3, "Marine 2");
+    marines[1] = new Marine(1, 5, "Marine 1");
+
+    marines[0]->show_status();
+    marines[1]->show_status();
+
+    std::cout << std::endl
+              << "마린 1이 마린 2 공격" << std::endl;
+
+    marines[0]->be_attacked(marines[1]->attack());
+
+    marines[0]->show_status();
+    marines[1]->show_status();
+
+    delete marines[0];
+    delete marines[1];
+
+    return 0;
+}
+```
+- new는 malloc과 동적으로 할당하는 것이 같지만 객체를 **동적으로 생성하면서 동시에 자동으로 생성자를 호출**해준다.
+
+```cpp
+marines[0]->show_status();
+marines[1]->show_status();
+```
+- Marine들의 포인터를 가리키는 배열이므로 '.'이 아니라 '->'를 사용해야된다.
+
+```cpp
+delete marines[0];
+delete marines[1];
+```
+- 동적할당한 메모리는 언제나 해제해줘야한다는 원칙을 잊으면 안된다.
+
+```cpp
+Marine::Marine(int x, int y, const char *marine_name)
+{
+    name = new char[strlen(marine_name) + 1];
+    strcpy(name, marine_name);
+
+    coord_x = x;
+    coord_y = y;
+    hp = 50;
+    damage = 5;
+    is_dead = false;
+}
+```
+- name을 동적으로 생성해서 문자열을 복사했는데, 이렇게 동적할당된 char 배열에 대한 delete는 언제 이루어 지는 것일까?
+  - 명확히 delete를 지정하지 않는 한 자동으로 delete가 되는 경우는 없다.
+  - name은 영원히 메모리 공간 속에서 둥둥 떠다닌다는 의미다.
+  - 이러한 것들이 쌓이면 **Meamory Leak**이 발생하게 된다.
+- 객체가 소멸될 때 자동으로 객체를 delete해주느 함수가 **Destructor**인 것이다.
+
+```cpp
+Marine::~Marine() {
+    std::cout << name << " 의 소멸자 호출 " << std::endl;
+    if (name != NULL) {
+        delete[] name;
+    }
+}
+```
+- 위와 같은 소멸자를 추가해준다.
+  - public쪽에 ~Marine(); 추가하고 해야된다.
+- 소멸자의 호출 방식은 ~(ClassName)인 것이다.
+- name은 배열로 동적할당해서 delete역시 delete[]으로 해제해줘야한다.
+
+```
+...
+Marine 2 의 소멸자 호출 
+Marine 1 의 소멸자 호출 
+```
+- delete marines[idx]를 호출로 인해 객체가 소멸될 때 소멸자가 호출되는 것을 알 수 있다.
+
+## Destructor의 호출 순서
+```cpp
+#include <iostream>
+#include <string.h>
+
+class Test
+{
+    char c;
+
+public:
+    Test(char _c)
+    {
+        c = _c;
+        std::cout << "생성자 호출 " << c << std::endl;
+    }
+
+    ~Test() { std::cout << "소멸자 호출 " << c << std::endl; }
+};
+
+void simple_function() { Test b('b'); }
+int main()
+{
+    Test a('a');
+    simple_function();
+}
+```
+- simple_fucntion안에서 b 객체를 생성하므로 b는 simple_function의 **지역 객체**이기 때문에 simple_function이 종료됨과 동시에 b의 소멸자가 호출된다.
+- main 함수 종료 시 지역 객체였던 a가 소멸되면서 a의 소멸자가 호출된다.
+
+```
+생성자 호출 a
+생성자 호출 b
+소멸자 호출 b
+소멸자 호출 a
+```
+- 그래서 위와 같은 순서로 호출되는 것이다.
+---
+- 소멸자의 역할은 상당히 중요하다.
+- 객체가 다른 부분에 영향을 끼치지 않도록 깔끔하게 소멸시키는 일은 매우 중요하다.
+- 가장 흔한 역할은 동적으로 할당받은 메모리를 해제하는 일이다.
+- 그 외에도 Thread 사이에서 lock된 것을 푸는 역할 등을 수행한다.
+- Default Destructor도 있다. 소멸자 내부에서 아무런 작업도 수행하지 않게 된다.
+  - 소멸자가 필요없는 클래스에서 사용
+
+
