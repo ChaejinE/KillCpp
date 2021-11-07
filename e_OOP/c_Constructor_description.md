@@ -56,11 +56,51 @@ class Test{
 ```
 - C++ 11 이후 : 개발자가 깜빡 잊고 생성자를 정의하지 않은 것인지 아니면 정말 디폴트 생성자를 사용하고 파서 인지 알 길이 없으므로 명시적으로 deafult constructor를 사용하도록 명시할 수 있게 되었다.
 
+# Constructor Initialzer list
+```cpp
+Marine::Marine() : hp(50), coord_x(0), coord_y(0), damage(5), is_dead(false) {}
+```
+- 함수 본체에는 아무 것도 없어도 된다.
+- 추가된 이상한 것들이 기존 생성자가 하던 일과 동일한 작업을 하고 있을 뿐이다.
+
+```cpp
+:: hp(50), coord_x(0), coord_y(0), damage(5), is_dead(false) {}
+```
+- 생성자 이름 뒤에 오는 것을 Initializer List(초기화 리스트)라고 부른다.
+- 생성자 호출과 동시에 멤버 변수들을 초기화해주게 된다.
+
+```cpp
+(생성자 이름) : var1(arg1), var2(arg2) {}
+```
+- 일반적인 꼴은 위와같이 이해하면 될거 같다.
+- 흥미로운 점은 var1과 arg1의 이름이 같아도 된다.
+  - (arg1)은 무조건 Class가 인자로 받은 값을, var1은 Class 내의 member variable을 지칭하는 것이기 때문이다.
+  - 이전에는 이렇게하면 오류가 난다.
+## Initializer List, 왜 사용하는 가 ?
+- **생성과 초기화를 동시에 하게 된다.**
+- 반면 사용하지 않았을 시 **생성을 먼저하고 그 다음에 대입**을 수행한다.
+
+```cpp
+int a = 10;
+```
+
+```cpp
+int a;
+a = 10;
+```
+- 위와 동일하다고 볼 수 있는데, 전자의 경우 복사 생성자가 호출된다.
+- 후자의 경우 디폴트 생성자가 호출된 뒤 대입이 수행된다.
+- 딱 보아도 후자의 경우가 하는 일이 더 많아 보인다.
+- **생성과 동시에 초기화 되어야하는 것들** : Reference, Constant
+  - 전자의 경우 처럼 선언하면 사용이 불가하게될 것이다. (컴파일 오류)
+  - Reference, Const 변수는 무조건 초기화 리스트를 사용해서 초기화 시켜줘야한다.
+
+
 # Constructor Overloading
 - 생성자 역시 함수이므로 함수의 Overloading이 적용될 수 있다.
 - Class 객체를 여러가지 방식으로 생성할 수 있게 되는 것이다.
 
-```
+```cpp
 #include <iostream>
 
 class Date
@@ -338,4 +378,244 @@ int main()
 - Default Destructor도 있다. 소멸자 내부에서 아무런 작업도 수행하지 않게 된다.
   - 소멸자가 필요없는 클래스에서 사용
 
+# 복사 생성자
+```cpp
+// 포토캐논
+#include <string.h>
+#include <iostream>
 
+class Photon_Cannon
+{
+    int hp, shield;
+    int coord_x, coord_y;
+    int damage;
+
+public:
+    Photon_Cannon(int x, int y);
+    Photon_Cannon(const Photon_Cannon &pc);
+
+    void show_status();
+};
+Photon_Cannon::Photon_Cannon(const Photon_Cannon &pc)
+{
+    std::cout << "복사 생성자 호출 !" << std::endl;
+    hp = pc.hp;
+    shield = pc.shield;
+    coord_x = pc.coord_x;
+    coord_y = pc.coord_y;
+    damage = pc.damage;
+}
+Photon_Cannon::Photon_Cannon(int x, int y)
+{
+    std::cout << "생성자 호출 !" << std::endl;
+    hp = shield = 100;
+    coord_x = x;
+    coord_y = y;
+    damage = 20;
+}
+void Photon_Cannon::show_status()
+{
+    std::cout << "Photon Cannon " << std::endl;
+    std::cout << " Location : ( " << coord_x << " , " << coord_y << " ) "
+              << std::endl;
+    std::cout << " HP : " << hp << std::endl;
+}
+int main()
+{
+    Photon_Cannon pc1(3, 3);
+    Photon_Cannon pc2(pc1);
+    Photon_Cannon pc3 = pc2;
+
+    pc1.show_status();
+    pc2.show_status();
+}
+```
+- 포토케논 예제다.
+
+```cpp
+Photon_Cannon(const Photon_Cannon& pc);
+```
+- 복사 생성자의 표준적 정의다.
+
+```cpp
+T(const T& a);
+```
+- T의 객체 a를 상수 레퍼런스로 받는 다는 의미로 정의하면된다.
+- a가 const 이므로 복사 생성자 내부에서 a의 데이터를 변경할 수 없고, 오직 새롭게 초기화되는 Instance 변수들에게 **복사만 할 수 있게 된다.**
+
+```cpp
+Photon_Cannon::Photon_Cannon(const Photon_Cannon& pc) {
+  std::cout << "복사 생성자 호출 !" << std::endl;
+  hp = pc.hp;
+  shield = pc.shield;
+  coord_x = pc.coord_x;
+  coord_y = pc.coord_y;
+  damage = pc.damage;
+}
+```
+- 이 부분에서 pc.coord_x=3; 이런식으로 **pc의 값 자체는 변경할 수 없다**는 말이다.
+- const가 헷갈리면 ConstPoimter(Ref).md를 보자.
+
+## 복사 생성자 사용법
+```cpp
+Photon_Cannon pc1(3, 3);
+Photon_Cannon pc2(pc1);
+```
+- pc1은 int x, int y를 인자로 가지는 생성자가 오버로딩되었다.
+- pc2는 pc1을 넘겨서 **복사 생성자가 호출된다.**
+
+```cpp
+Phton_Cannon pc3 = pc2;
+```
+- 위 코드 역시 **복사 생성자가 호출된다.**
+- 그 위의 코드와 동일한 형태로 동작하게 된다.
+  - Photon_Cannon pc3(pc2);
+- 생성자가 **1번 호출**된다.
+- 사용자가 직관적이고 깔끔한 프로그래밍을 할 수 있다.
+
+```cpp
+Photon_Cannon pc3;
+pc3 = pc2;
+```
+- 생성자가 1번 호출되고, pc3 = pc2; 라는 명령이 실행되는 것이다.
+  - 평범한 대입 연산이다.
+- 복사 생성자는 오직 **생성 시에 호출**된다는 것을 명심해야된다.
+- 그 위의 코드와 엄연히 다른 코드다.
+---
+- 그런데 사실 Deafult Copy Constructor를 지원해주고 있다.
+- 본 코드에서 복사 생성자를 지워보고 실행해보면 정확히 이전과 동일한 결과가 나타난다.
+- 실제로 **복사**를 해주는 일이 일어나는 것이다.
+  - 추정해보면, 위의 복사 생성자에서 정의한 것처럼 일이 작동할 것이다.
+  - 간단한 클래스의 경우 귀찮게 복사생성자를 써주지 않고, 디폴트 생성자를 이용한다.
+---
+## 디폴트 복사 생성자의 한계
+```cpp
+// 포토캐논
+#include <string.h>
+#include <iostream>
+
+class Photon_Cannon
+{
+    int hp, shield;
+    int coord_x, coord_y;
+    int damage;
+
+    char *name;
+
+public:
+    Photon_Cannon(int x, int y);
+    Photon_Cannon(const Photon_Cannon &pc);
+    Photon_Cannon(int x, int y, const char *cannon_name);
+    ~Photon_Cannon();
+
+    void show_status();
+};
+Photon_Cannon::Photon_Cannon(const Photon_Cannon &pc)
+{
+    std::cout << "복사 생성자 호출 !" << std::endl;
+    hp = pc.hp;
+    shield = pc.shield;
+    coord_x = pc.coord_x;
+    coord_y = pc.coord_y;
+    damage = pc.damage;
+
+    name = NULL;
+}
+Photon_Cannon::Photon_Cannon(int x, int y)
+{
+    std::cout << "생성자 호출 !" << std::endl;
+    hp = shield = 100;
+    coord_x = x;
+    coord_y = y;
+    damage = 20;
+
+    name = NULL;
+}
+Photon_Cannon::Photon_Cannon(int x, int y, const char *cannon_name)
+{
+    std::cout << "name 생성자 호출 !" << std::endl;
+    hp = shield = 100;
+    coord_x = x;
+    coord_y = y;
+    damage = 20;
+
+    name = new char[strlen(cannon_name)];
+    strcpy(name, cannon_name);
+}
+Photon_Cannon::~Photon_Cannon()
+{
+    if (name) delete[] name;
+}
+void Photon_Cannon::show_status()
+{
+    std::cout << "Photon Cannon " << std::endl;
+    std::cout << " Location : ( " << coord_x << " , " << coord_y << " ) "
+              << std::endl;
+    std::cout << " HP : " << hp << std::endl;
+}
+int main()
+{
+    Photon_Cannon pc1(3, 3);
+    Photon_Cannon pc2(pc1);
+    Photon_Cannon pc3 = pc2;
+
+    pc1.show_status();
+    pc2.show_status();
+}
+```
+- char *name을 추가한 코드다.
+- 위 처럼 만들어서 실행했을 경우, 런타임에러가 발생한다.
+- 디폴트 복사 생성자는 1 대 1로 원소들 간의 정확한 복사를 수행해준다.
+
+```cpp
+Photo_Cannon::Photo_Cannon(const Photo_Cannon& pc) {
+    hp = pc.hp;
+    shield = pc.shield;
+    coord_x = pc.coord_x;
+    coord_y = pc.coord_y;
+    damage = pc.damage;
+    name = pc.name;
+}
+```
+- 추정해보자면 위와 같이 작동한다고 생각할 수 있다.
+
+![image](https://user-images.githubusercontent.com/69780812/140632329-0d80099e-9285-4dee-82a6-38066377dfe7.png)
+- 이 그림은 복사 생성자 호출한 뒤에 pc1과 pc2가 어떻게 되었는지에대한 그림이다.
+- pc1의 name이 동적으로 할당 받아 가리키고 있던 메모리 (Cannon 이라는 문자열이 저장된 메모리)를 **pc2의 name도 같이 가리키게 된다.**
+  - 이 상태에서는 문제가 될건 없어보인다.
+- 문제는 **소멸자에서 일어난다.**
+
+![image](https://user-images.githubusercontent.com/69780812/140632354-ad5fa723-8f10-462b-a663-b7670ad87199.png)
+- main 함수 종료 직전에 객체들이 파괴되면서 소멸자를 호출한다.
+- pc1이 먼저 파괴되었다고 생각해보자.
+- 0x125ADD3에 할당한 메모리가 delete 될 것이다.
+- 문제는 pc2의 name이 **해제된 메모리인 0x125ADD3을 가리키고 있다는 것이다.**
+  - 이미 해제된 메모리에 접근해서 다시 해제하려고 했기에 런타임 오류가 발생한다.
+  - 사실, 접근한 것에서 부터 오류다.
+- 해결책은 다른 메모리에 동적 할당해서 그 내용만 복사하면 될 것이다.
+  - **Deep Copy**
+  - 아까처럼 단순 대입만 해주는 것을 **Shallow Copy**라고한다.
+- Compiler가 생성하는 Default Copy Constructor는 Shallow Copy만 수행한다.
+- Deep Copy를 수행하기 위해서는 사용자가 직접 복사 생성자를 만들어야한다.
+
+![image](https://user-images.githubusercontent.com/69780812/140632406-81ada124-a7c4-4a9d-8b68-c0ee7c48bc02.png)
+- 다른 변수들은 얕은 복사를 한다.
+- name의 경우 따로 메모리를 할당해서 그 내용만 복사하는 DeepCopy를 수행하는 것이다.
+- 그러면 소멸자에서도 메모리 해제 시 각기 다른 메모리를 해제하므로 전혀 문제가 발생하지 않는다.
+
+```cpp
+Photon_Cannon::Photon_Cannon(const Photon_Cannon &pc) {
+    std::cout << "복사 생성자 호출 " << std::endl;
+    hp = pc.hp;
+    shield = pc.shield;
+    coord_x = pc.coord_x;
+    coord_y = pc.coord_y;
+    damage = pc.damage;
+
+    name = new char[strlen(pc.name) + 1];
+    strcpy(name, pc.name);
+}
+```
+- 위와 같이 복사 생성자를 DeepCopy하도록 정의할 수 있는 것이다.
+- 사실, C언어 처럼 char 배열로 문자열을 다르는 것은 **매우 비추**한다고한다.
+  - C++의 std::string이라는 문자열 클래스를 사용하여 숙지하자 !
