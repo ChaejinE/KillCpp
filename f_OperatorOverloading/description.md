@@ -227,3 +227,139 @@ a + a
 - a.operator+(a)와 operator+(a, a) 둘 중 선택하는지 몰라 에러가난다.
 - 통상적으로 자기자신을 리턴하지 않는 이항 연산자들 +, -, *, / 들은 모두 **외부 함수로 선언하는 것이 원칙**이다.
 - 반대로 +=, -= 등 자신을 리턴하는 이항연산자들은 **멤버 함수로 선언하는 것이 원칙**이다.
+
+# 입출력 연산자 오버로딩
+```cpp
+std::cout << a;
+```
+- std::cout.operator<<(a)를 하는 것과 동일한 명령이다.
+- std::cout 객체에 operator<<()가 정의되어 있기 때문이다.
+- iostream은 **ostream** header를 include하고 있으며 ostream 클래스에 엄청난 수의 operator<<가 정의되어 있다.
+  - 덕분에 편하게 인자 타입에 관계없이 손쉽게 출력을 사용할 수 있는 것이다.
+- 실제 사용하고 있는 Class에서 사용하기 위해 ostream 클래스에 Complex객체에 해당하는 연산자 오버로딩을 하기는 어렵다.
+  - ostream객체와 Complex 객체 두개를 인자로 받는 **전역 operator<< 함수를 정의**하면 된다.
+
+```cpp
+std::stream& operator<<(std::ostream& os, const Complex& c)
+{
+    os << "( " << c.real << " , " << c.img << " ) ";
+    return os;
+}
+```
+
+```cpp
+std::cout << "a value : " << a << "이다." << std::endl;
+```
+- 위와 같이 선언할 수 있는데 한가지 문제가 있다.
+  - operator<<에서 c.real, c.img 멤버에 접근할 수 없다. (Private이므로)
+- Complex에 print(std::ostream& os)와 같은 멤버함수를 통해 operator<<에서 호출할 수 있다.
+
+```cpp
+friend ostream& operator<<(ostream& os, const Complex& c);
+```
+- 하지만 friend 키워드로도 해결이 가능하다.
+- cin은 istream 객체이고 operator>>를 오버로딩한다.
+---
+- 무분별하게 friend 키워드를 남발하는 것은 권장하지 않는다.
+- private의 **구현 디테일은 최대한 숨긴다.**는 원칙을 지키기 어려워진다.
+- 테스트 코드를 작성할 때 friend 코드를 유용하게 사용하는 경우가 종종 있다.
+---
+
+# 첨자 연산자 (operator[])
+- 만약 String Class를 만든다면 클래스에서 개개의 문자에 접근하기 위해 \[]를 지원해야한다.
+- \[]는 몇번째 인지에 대한 첨자를 넣어주는 역할을 한다.
+
+```cpp
+char& operator[](const int index);
+```
+- index로 \[]안에 들어가는 값을 받는다.
+- char&로 Return하는 이유는 str[10] = 'c';와 같은 명령을 수행하므로 그 원소의 Reference를 Return하는 것이다.
+
+```cpp
+char& MyString::operator[](const int index)
+{
+    return string_content[index];
+}
+```
+- 이런 식으로 간단히 구현할 수 있겠다.
+- index번째 string_content를 return 하여 operator[]를 사용하는 사용자가 이의 Reference를 갖을 수 있게 된다.
+
+# Type 변환 연산자 (Wrapper Class)
+```cpp
+class Int
+{
+    int data;
+
+    public:
+        Int(int data) : data(data) {}
+        Int(const int& i) : data(i.data) {}
+};
+```
+- wrapper : 무언가를 포장하는 이라는 뜻이다.
+- 어떤 경우 기본 자료형을 객체로써 다루어야할 때가 있다.
+- Int는 int형의 Wrapper 클래스이므로 정확히 똑같이 동작하도록 만들고 싶을 것이다.
+
+```cpp
+Int x = 3;
+int a = x + 4;
+```
+- 이를 잘 수행하기 위해 복잡한 연산자들이 생각나겠지만, 이 클래스는 단순히 int형 변수 끼리 하는 일과 정확히 똑같기 때문에 굳이 이미 제공하는 기능을 다시 만들필요가 없다.
+- class 객체를 int 형 변수로 변환할 수 있다면 operator+ 등을 정의하지 않고도 컴파일러가 이 객체를 int 형 변수로 변환하여 수행할 수 있을 것이다.
+
+```
+operator (변환하고자 하는 Type) ()
+```
+
+```cpp
+operator int()
+```
+- 한가지 주의할 점 : 생성자 처럼 함수의 Return Type을 써주면 안된다.
+
+```cpp
+operator int() {return data; }
+```
+- 단순히 data를 Return 해주면 된다.
+- 컴파일러 입장에서 적절한 변환 연산자로 operator int를 찾아 int로 변환하여 처리해주기 때문이다.
+- 대입시 문제가 발생할 것 같지만 디폴트 대입 연산자가 알아서 처리해준다.
+
+# 전위/후위 증감 연산자
+- ++, --로 사용하는 증감 연산자들이다.
+
+```cpp
+operator++();
+operator--();
+```
+- 이는 ++x, --x 를 오버로딩한다.
+
+```cpp
+operator++(int x);
+operator--(int x);
+```
+- 이는 x++, x--를 오버로딩한 것이다.
+- 단순히 컴파일러에서 전위와 후위를 구분하기 위해 int 인자를 넣은 것뿐이다.
+
+```cpp
+operator++(int);
+operator--(int);
+```
+- 사실 인자로 들어가는 값을 사용하지는 않는다 그래서 후위 증감연산자 오버로딩은 위와같이 하면된다.
+- 주의할 점
+  - 전위 증감 연산 : **값이 바뀐 자신을 Return**
+  - 후위 증감 연산 : **값이 바뀌기 이전의 객체를 Return**
+
+```cpp
+A& operator++() {
+    return *this;
+}
+```
+- 전위 연산자는 ++에 해당하는 연산을 수행하고 자기 자시늘 반환해야한다.
+
+```cpp
+A operator++(int) {
+    A temp(A);
+
+    return temp;
+}
+```
+- ++ 하기전에 객체를 반환해야 하므로 temp 객체를 만들어서 이전 상태 기록 후 ++을 수행한뒤 temp 객체를 반환하게 된다.
+- 따라서 **후위 증감 연산의 경우 추가적으로 복사 생성자 호출하므로 전위 증감 연산자 보다 더 느리다.**
