@@ -1,8 +1,8 @@
+#include <algorithm>
+#include <functional>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <iostream>
-#include <functional>
 
 template <typename Iter>
 void print(Iter begin, Iter end)
@@ -15,15 +15,10 @@ void print(Iter begin, Iter end)
     std::cout << std::endl;
 }
 
-// 홀수면 제거하도록하는 객체
-struct is_odd
-{
-    bool operator()(const int& i) { return i % 2 == 1; }
-};
-
 int main()
 {
     std::vector<int> vec;
+
     vec.push_back(5);
     vec.push_back(3);
     vec.push_back(1);
@@ -31,10 +26,12 @@ int main()
     vec.push_back(3);
     vec.push_back(4);
 
-    std::cout << "처음 상태 ----" << std::endl;
+    std::cout << "처음 vec ----------" << std::endl;
     print(vec.begin(), vec.end());
 
-    std::cout << " 홀수 인 원소 제거 ----" << std::endl;
-    vec.erase(std::remove_if(vec.begin(), vec.end(), is_odd()), vec.end());
+    std::cout << "벡터에서 홀수인 원소 제거 ----" << std::endl;
+    vec.erase(std::remove_if(vec.begin(), vec.end(),
+                            [](int i) -> bool { return i % 2 == 1; }),
+              vec.end());
     print(vec.begin(), vec.end());
 }
