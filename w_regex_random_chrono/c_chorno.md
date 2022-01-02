@@ -102,4 +102,4 @@ int main()
 ```
 - system_clock에서 현재 time_point를 얻어온 후 날짜를 출력하기 위해 time_t객체로 변환해야한다.
   - 각 clock이 제공하는 static 함수인 to_time_t를 사용하면된다.
-- 그 후 현재 시간을  std::tm 객체로 변호나하기 위해 std::localtime에 t를 전달했고, std::put_time을 사용해 우리가 원하는 형태의 문자열로 구성할 수 있게 된다.
+- 그 후 현재 시간을  std::tm 객체로 변환하기 위해 std::localtime에 t를 전달했고, std::put_time을 사용해 우리가 원하는 형태의 문자열로 구성할 수 있게 된다.
