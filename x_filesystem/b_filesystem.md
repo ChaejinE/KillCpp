@@ -166,3 +166,172 @@ int main()
 "/home/cjlotto/git_clone/KillCpp/x_filesystem/Practice_filesystem/a/2.txt"
 "/home/cjlotto/git_clone/KillCpp/x_filesystem/Practice_filesystem/a/3.txt"
 ```
+
+# 디렉터리 생성
+```cpp
+std::ofstream out("a.txt");
+out << "hi;
+```
+- ofstream 라이브러리를 사용하면 파일을 간단하게 생성할 수 있다.
+  - a.txt라는 파일이 존재하지 않을 시 파일이 생성되며 내용이 작성된다.
+  - 그런데 디렉토리를 생성할 수 있는 라이브러리는 아니다.
+
+```cpp
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main()
+{
+    fs::path p("./a/c");
+    std::cout << p << "exist ? [" << std::boolalpha << fs::exists(p)
+              << "]" << std::endl;
+
+    fs::create_directory(p);
+
+    std::cout << p << "exist ? [" << fs::exists(p) << "]" << std::endl;
+    std::cout << p << "directory ? [" << fs::is_directory(p) << "]" << std::endl;
+}
+```
+
+```
+"./a/c"exist ? [false]
+"./a/c"exist ? [true]
+"./a/c"directory ? [true]
+```
+- create_directory 함수는 주어진 경로를 인자로 받아 디렉토리를 생성한다.
+  - **생성하는 디렉토리의 부모디렉토리는 반드시 존재**하고 있어야한다.
+
+```cpp
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main()
+{
+    fs::path p("./c/d/e/f");
+    std::cout << p << "exist ? [" << std::boolalpha << fs::exists(p)
+              << "]" << std::endl;
+
+    fs::create_directories(p);
+
+    std::cout << p << "exist ? [" << fs::exists(p) << "]" << std::endl;
+    std::cout << p << "directory ? [" << fs::is_directory(p) << "]" << std::endl;
+}
+```
+
+``` 
+"./c/d/e/f"exist ? [false]
+"./c/d/e/f"exist ? [true]
+"./c/d/e/f"directory ? [true]
+```
+
+# 파일과 폴더 복사/삭제하기
+```cpp
+#include <iostream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+int main()
+{
+    fs::path from("./a");
+    fs::path to("./c");
+
+    fs::copy(from, to, fs::copy_options::recursive);
+}
+```
+- copy함수에 복사할 대상과 복사할 위치를 차례대로 인자로 전달하면 된다.
+- 마지막 인자로 어떠한 방식으로 복사할지 지정해준다.
+- rucrusive 옵션은 복사할 대상에 존재하는 모든 디렉토리와 파일들을 복사하게했다.
+  - default는 파일들만 복사하게된다.
+- 만약 복사할 대상이 이미 존재하고 있으면 에외를 던진다.
+  - skip_existing : 이미 존재하는 파일은 무시 (예외 pass)
+  - overwrite_existing : 이미 존재하는 파일 덮어쓰기
+  - update_existing : 이미 존재하는 파일이 더 오래되었을 경우 덮어 쓴다.
+
+# 파일 / 디렉토리 삭제
+```cpp
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main()
+{
+    fs::path p("./a/b.txt");
+    std::cout << p << " exist ? " << std::boolalpha << fs::exists(p) << std::endl;
+
+    fs::remove(p);
+    std::cout << p << " exist ? " << std::boolalpha << fs::exists(p) << std::endl;
+}
+```
+
+```
+"./a/b.txt" exist ? true
+"./a/b.txt" exist ? false
+```
+- 파일뿐만 아니라 디렉토리 역시 지울 수 있다.
+  - 단, **디렉토리가 반드시 빈 디렉토리어야한다.**
+- 비어있지 않는 디렉토리를 삭제하려면 remove_all()함수를 사용해야된다.
+
+```cpp
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main()
+{
+    fs::path p("./c/b");
+
+    std::error_code err;
+    fs::remove(p, err);
+    std::cout << err.message() << std::endl;
+
+    fs::remove_all(p);
+}
+```
+
+```
+Directory not empty
+```
+
+# directory_iterator 사용시 주의
+- 특정 확장자를 모두 삭제하는 프로그램을 만들 때,  directory_iterator를 통해  코드그를 짜면 파일 삭제 시 마다 해당 기렉토리의 구조가 바뀌게된다.
+  - 그러므로 iterator는 무효화 되는 것이다.
+- fs:;remove후 entry는 사용할 수 없는 반복자가 되는 것이다.
+  - ++entry가 다음 디렉토리를 가리키는 것을 보장할 수 없게되는 것이다.
+
+```cpp
+#include <iostream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+int main()
+{
+    fs::path p("./a");
+
+    while(true)
+    {
+        bool is_modified = false;
+        for (const auto& entry : fs::directory_iterator("./a"))
+        {
+            const std::string ext = entry.path().extension();
+            if (ext == ".txt")
+            {
+                fs::remove(entry.path());
+                is_modified = true;
+                break;
+            }
+        }
+
+        if (!is_modified)
+            break;
+    }
+}
+```
+- 위처럼 어쩔 수 없이 삭제 마다 반복자를 초기화 해줘야한다.
